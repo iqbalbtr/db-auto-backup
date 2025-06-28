@@ -1,10 +1,10 @@
 import { statSync } from "fs"
-import logger from "../lib/loggin"
+import logger from "../lib/logging"
 import { getCommandBackup } from "../lib/util"
 import { ConfigBackup } from "../types/config"
 import { execCommand } from "./executor"
 import { ScheduleTime } from "../types/cron"
-import { startDailyJob, startWeeklyJob } from "./cron"
+import { startDailyJob, startJob, startWeeklyJob } from "./cron"
 
 
 const backupDatabase = async (config: ConfigBackup) => {
@@ -23,16 +23,20 @@ const backupDatabase = async (config: ConfigBackup) => {
     logger.info(`Duration: ${duration}s | Size: ${sizeKB} KB`);
 }
 
-const startScheduleBackup = (time: ScheduleTime, config: ConfigBackup | ConfigBackup[]) => {
+const startScheduleBackup = (time: ScheduleTime | string, config: ConfigBackup | ConfigBackup[]) => {
 
     let count = Array.isArray(config) ? config.length : 1;
 
     logger.info(`Starting backups with ${count} database`)
 
+    if(typeof time == "string"){
+        return startJob(time, () => runBackup(config))
+    }
+
     if (time.type == "weekly") {
-        return startWeeklyJob(time, () => runBackup(config)).start()
+        return startWeeklyJob(time, () => runBackup(config))
     } else {
-        return startDailyJob(time, () => runBackup(config)).start()
+        return startDailyJob(time, () => runBackup(config))
     }
 
 }
